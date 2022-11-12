@@ -6,7 +6,7 @@ If they wish to issue a certificate, they are introduced to MetaMask,
 Including a link and explanation. 
 It does not use all functionalities of the solidity contract yet. 
 
-please note:
+please note: cc
 I built the app while learning solidity and js. It is an personal educational project.  
 For an extensive explanation of the app and its aims, see the readme file and about section in the app
 */ 
