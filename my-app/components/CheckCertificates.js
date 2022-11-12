@@ -70,7 +70,7 @@ const CheckCertificates = ({ handleSubmit }) => {
                           <Header as ="h4" content = 'Step 1: Provide an Ethereum address' />
                           <input 
                               type='text'
-                              placeholder='Ethereum adress: 0x00...' 
+                              placeholder='0x00000... or JaneDoe.eth.' 
                               onChange = {(e) => setUserInput(e.target.value)} 
                               />
                           </Segment>
