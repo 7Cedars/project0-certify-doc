@@ -25,7 +25,7 @@ const FrontPage = () => {
                 as='h1'
                 content='Certify.doc' 
                 style={{
-                fontSize: '4em',
+                fontSize: '5em',
                 fontWeight: 'normal',
                 marginBottom: 0,
                 color: "white"
@@ -39,14 +39,14 @@ const FrontPage = () => {
                 style={{
                 fontSize: '1.7em',
                 fontWeight: 'normal',
-                marginTop: '1.5em',
+                marginTop: '2em',
                 color: "white"
                 }}
             />
                 <Button primary 
                 size='huge' 
                 onClick={() => setTab('About')}
-                style={{ marginTop: '3.1rem' }}>
+                style={{ marginTop: '5.8rem' }}>
                 Find out more 
                 </Button>
             </Segment>
@@ -56,8 +56,8 @@ const FrontPage = () => {
     const rigthSidePage = (
         <Container className="userInputBox"  >
             <Segment basic textAlign = 'left' style={{
-                marginBottom: '3em',
-                marginTop: '2em',
+                marginBottom: '3.1em',
+                marginTop: '2.6em',
                 fontSize: 'large',
                 color: "none"
                 }}>
