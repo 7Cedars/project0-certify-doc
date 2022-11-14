@@ -57,7 +57,7 @@ const AboutPage = () => {
                     <br/>
                     <br/>
                     {/* Still need to include links here. */}
-                    Check out the github repository for the react frontend and solidity backend.  
+                    The github repository can be found at <a href="https://github.com/7Cedars/project0-certify-doc">https://github.com/7Cedars/project0-certify-doc</a>.  
 
                     </Container>
                 </Segment>
