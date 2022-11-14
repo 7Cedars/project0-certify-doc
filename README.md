@@ -4,13 +4,13 @@ It records certificates of authenticity on the blockchain. These certifiactes  r
 They are somewhat similar to non-fungible tokens (NFTs).
 
 But in contrast to NFTs 
-- These records cannot be traded or exchanged. They can only revoked. 
+- These records cannot be traded or exchanged. They can only be revoked. 
 - These records can be accessed by uploading the original document. No ethereum wallet required.  
 
-Because these records are related to an offline document that can be send via email, social media or any other traditional method, it is extremely accesible to those that are not familiar with blockchain technology. 
+Because these records are related to an offline document that can be send via email, social media or any other traditional method, it is extremely easy way to have those not familiar with blockchain technology interact with a dapp. 
 
 ## Getting Started
-To view and use the deployed dapp, please visit its deployed instance on vercel: [https://github.com/7Cedars/project0-certify-doc](https://github.com/7Cedars/project0-certify-doc). 
+To view and use the deployed dapp, please visit its deployed instance on vercel: [https://vercel.com/7cedars/project0-certify-doc](https://vercel.com/7cedars/project0-certify-doc). 
 
 To view and run the contract locally, see the file at: hardhat/contracts/CertifyDoc.sol. The Remix IDE is arguabbly the easiest way to locally run and test the contract. 
 
