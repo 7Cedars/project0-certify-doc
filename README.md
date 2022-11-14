@@ -10,7 +10,7 @@ But in contrast to NFTs
 Because these records are related to an offline document that can be send via email, social media or any other traditional method, it is extremely easy way to have those not familiar with blockchain technology interact with a dapp. 
 
 ## Getting Started
-To view and use the deployed dapp, please visit its deployed instance on vercel: [https://vercel.com/7cedars/project0-certify-doc](https://vercel.com/7cedars/project0-certify-doc). 
+To view and use the deployed dapp, please visit its deployed instance on vercel: [https://project0-certify-doc.vercel.app/](https://project0-certify-doc.vercel.app/). 
 
 To view and run the contract locally, see the file at: hardhat/contracts/CertifyDoc.sol. The Remix IDE is arguabbly the easiest way to locally run and test the contract. 
 
