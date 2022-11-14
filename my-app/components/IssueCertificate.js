@@ -51,8 +51,8 @@ const IssueCertificate = ({ certify }) => {
                             {/* Segment for uploading document to be certified */}        
                             <Header as ="h2" content = 'Issue your own certificate of authenticity' /> 
                             <Container textAlign = 'center'> 
-                                <Icon name='file image outline' size = 'huge' style={{
-                                        marginTop: '.2em', marginBottom: '-.3em'}}>
+                                <Icon name='upload' size = 'huge' style={{
+                                        marginTop: '.2em', marginBottom: '.5em'}}>
                                 </Icon>
                             </Container>
                             <Form >

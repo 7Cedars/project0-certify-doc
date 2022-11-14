@@ -109,7 +109,7 @@ const CheckCertificates = ({ handleSubmit }) => {
                         <Header as ="h2" content = 'Has a document been certified as authentic?' /> 
                         <Container textAlign = 'center'> 
                           <Icon name='file image outline' size = 'huge' style={{
-                                marginTop: '.2em', marginBottom: '-.2em'
+                                marginTop: '.2em', marginBottom: '-.3em'
                                 }}>
                           </Icon>
                         </Container>
