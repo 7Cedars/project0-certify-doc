@@ -8,6 +8,7 @@ const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
 const { expect } = require("chai");
 const hre = require("hardhat");
 const { ethers, network } = require("hardhat");
+require("@nomicfoundation/hardhat-chai-matchers")
 
 const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
 const { Contract } = require("hardhat/internal/hardhat-network/stack-traces/model")
