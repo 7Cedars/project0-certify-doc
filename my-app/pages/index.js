@@ -12,12 +12,18 @@ For an extensive explanation of the app and its aims, see the readme file and ab
 */ 
 
 // importing dependencies. 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { ethers } from "ethers"; 
 import { UserContext } from "../components/userContext";
 import { Container, Grid, Card } from "semantic-ui-react"; 
 import 'semantic-ui-css/semantic.min.css';
 import ABI from '../utils/CertifyDoc.json';
+import Web3Modal from "web3modal";
+import Portis from "@portis/web3";
+import WalletConnectProvider from "@walletconnect/web3-provider";
+import Authereum from "authereum";
+import Fortmatic from "fortmatic";
+import { INFURA_ID, NETWORK, NETWORKS } from "../constants";
 
 // importing components. 
 import NavBar  from "../components/navBar";
@@ -27,6 +33,48 @@ import AboutPage from "../components/AboutPage";
 import CheckCertificates from "../components/CheckCertificates"
 import RenderCertificate from "../components/RenderCertificate"
 import IssueCertificate from "../components/IssueCertificate"
+
+// web3modal code examples from speedrunethereum's Austin Griffith.  
+// // See: 
+// const web3Modal = new Web3Modal({
+//   network: "mainnet", 
+//   cacheProvider: true, 
+//   theme: "light", 
+//   providerOptions: {
+//     walletconnect: {
+//       package: WalletConnectProvider, // required
+//       options: {
+//         bridge: "https://polygon.bridge.walletconnect.org",
+//         infuraId: INFURA_ID,
+//         rpc: {
+//           1: `https://mainnet.infura.io/v3/${INFURA_ID}`, // mainnet // For more WalletConnect providers: https://docs.walletconnect.org/quick-start/dapps/web3-provider#required
+//           42: `https://kovan.infura.io/v3/${INFURA_ID}`,
+//           100: "https://dai.poa.network", // xDai
+//         },
+//       },
+//     },
+// //     portis: {
+// //       display: {
+// //         logo: "https://user-images.githubusercontent.com/9419140/128913641-d025bc0c-e059-42de-a57b-422f196867ce.png",
+// //         name: "Portis",
+// //         description: "Connect to Portis App",
+// //       },
+// //       package: Portis,
+// //       options: {
+// //         id: "6255fb2b-58c8-433b-a2c9-62098c05ddc9",
+// //       },
+// //     },
+//     fortmatic: {
+//       package: Fortmatic, // required
+//       options: {
+//         key: "pk_live_5A7C91B2FC585A17", // required
+//       },
+//     },
+//     authereum: {
+//       package: Authereum, // required
+//     },
+//   },
+// });
 
 // Setup
 export default function Home() {
@@ -48,100 +96,165 @@ export default function Home() {
   const [message, setMessage] = useState('invisible');
   // keeps track if a wallet has been connected to the app, and if so - what address.  
   const [walletAddress, setWalletAddress] = useState(null);
+  // keeps track if a wallet has been connected to the app, and if so - what address.  
+  const [walletConnected, setWalletConnected] = useState(false);
   // keeps track if a wallet has a linked Ethereum Name.  
   const [ensName, setEnsName] = useState(null);
   // array to store user input. 
   const [userInput, setUserInput] = useState('');
   // array to save processed certificates returned from contract.
   const [certificatesArray, setCertificatesArray] = useState(null);
+  // See loading web3modal below. 
+  const web3ModalRef = useRef();
 
 /* 
 The following are functions to interact with ethereum contract. 
 */
 
-  // Check if Wallet is connected and if so, if address has ens name attached. 
-  const isWalletConnected = async () => {
-    try {
-      const { ethereum } = window;
-      const accounts = await ethereum.request({ method: 'eth_accounts' })
-      const provider = new ethers.providers.Web3Provider(ethereum, "any");
-      
-      if (accounts.length > 0 ) { 
-        const { chainId }  = await provider.getNetwork();
-        const ens = await provider.lookupAddress(accounts[0]);
+const getSigner = async () => {
+    // Since we store `web3Modal` as a reference, we need to access the `current` value to get access to the underlying object
+  const provider = await web3ModalRef.current.connect();
+  const web3Provider = new ethers.providers.Web3Provider(provider);
 
-        if (chainId == 5) { 
-          setWalletAddress(accounts)
-          if (ens) { setEnsName(ens) }
-          console.log("walletAddress:", walletAddress, 
-                      "ens: ", ens)           
-        }
-        if (chainId != 5) {
-          setMessage('wrongNetwork');
-          setWalletAddress('wrongNetwork');
-        }
-      }
-      else {
-        console.log("No connected wallet.");
-      }
-    } catch (error) {
-      console.log("error: ", error);
-    }
+  // If user is not connected to the Goerli network, let them know and throw an error
+  const { chainId } = await web3Provider.getNetwork();
+  if (chainId !== 5) {
+    window.alert("Change the network to Goerli");
+    throw new Error("Change network to Goerli");
+  }
+    const signer = web3Provider.getSigner();
+    return signer;
   }
 
-  // Connecting wallet (on click button) also check if ENS name is attached to address. 
-  const connectWallet = async () => {
-    try {
-      const { ethereum } = window;
-
-      if (!ethereum) {
-        setMessage("MetamaskNotInstalled");
-      }
-
-      const accounts = await ethereum.request({ method: 'eth_requestAccounts'});
-      const provider = new ethers.providers.Web3Provider(ethereum, "any");
-      const { chainId }  = await provider.getNetwork();
-      const ens = await provider.lookupAddress(accounts[0]);
-
-      if (chainId == 5) {
-        setWalletAddress(accounts);
-        if (ens) { setEnsName(ens) }  
-        console.log("walletAddress:", walletAddress, 
-                    "ens: ", ens)  
-      } else {
-        setMessage('wrongNetwork');
-        setWalletAddress('wrongNetwork');
-      }
-      
-    } catch (error) {
-      console.log(error);
-    }
+//   connectWallet: Connects the MetaMask wallet
+const connectWallet = async () => {
+  try {
+    // Get the provider from web3Modal, which in our case is MetaMask
+    // When used for the first time, it prompts the user to connect their wallet
+    const signer = await getSigner();
+    const ethAddress = await signer.getAddress()
+    setWalletConnected(true);
+    setWalletAddress(ethAddress); 
+  } catch (err) {
+    console.error(err);
   }
+};
+
+  // // Connecting wallet (on click button) also check if ENS name is attached to address. 
+  // const connectWallet = async () => {
+    
+  //   try {
+  //     const provider = await web3ModalRef.current.connect();
+  //     const web3Provider = new ethers.providers.Web3Provider(provider);
+
+  //     const { chainId }  = await web3Provider.getNetwork();
+  //     // const ens = await web3Provider.lookupAddress(accounts[0]);
+
+  //     if (chainId == 5) {
+  //       setWalletAddress(accounts);
+  //       // if (ens) { setEnsName(ens) }  
+  //       console.log("walletAddress:", walletAddress);  
+  //                   // "ens: ", ens)  
+  //       setWalletConnected(true);
+        
+  //     } else {
+  //       setMessage('wrongNetwork');
+  //       setWalletAddress('wrongNetwork');
+  //     }
+      
+  //     return web3Provider;
+
+  //   } catch (error) {
+  //     console.log(error);
+  //     setWalletConnected(false);
+  //   }
+  // }
+
+  // // Check if Wallet is connected and if so, if address has ens name attached. 
+  // const isWalletConnected = async () => {
+  //     try {
+  //       const { ethereum } = window;
+  //       const accounts = await ethereum.request({ method: 'eth_accounts' })
+  //       const provider = new ethers.providers.Web3Provider(ethereum, "any");
+        
+  //       if (accounts.length > 0 ) { 
+  //         const { chainId }  = await provider.getNetwork();
+  //         const ens = await provider.lookupAddress(accounts[0]);
+  
+  //         if (chainId == 5) { 
+  //           setWalletAddress(accounts)
+  //           if (ens) { setEnsName(ens) }
+  //           console.log("walletAddress:", walletAddress, 
+  //                       "ens: ", ens)           
+  //         }
+  //         if (chainId != 5) {
+  //           setMessage('wrongNetwork');
+  //           setWalletAddress('wrongNetwork');
+  //         }
+  //       }
+  //       else {
+  //         console.log("No connected wallet.");
+  //       }
+  //     } catch (error) {
+  //       console.log("error: ", error);
+  //     }
+  //   }
+  
+  // const logoutOfWeb3Modal = async () => {
+  // //   await web3Modal.clearCachedProvider();
+  // //   if (injectedProvider && injectedProvider.provider && typeof injectedProvider.provider.disconnect == "function") {
+  // //     await injectedProvider.provider.disconnect();
+  // //   }
+  // //   setTimeout(() => {
+  // //     window.location.reload();
+  // //   }, 1);
+  // };
+
+  //  const loadWeb3Modal = useCallback(async () => {
+  //   const provider = await web3Modal.connect();
+  //   setInjectedProvider(new ethers.providers.Web3Provider(provider));
+
+  // //   provider.on("chainChanged", chainId => {
+  // //     console.log(`chain changed to ${chainId}! updating providers`);
+  // //     setInjectedProvider(new ethers.providers.Web3Provider(provider));
+  // //   });
+
+  // //   provider.on("accountsChanged", () => {
+  // //     console.log(`account changed!`);
+  // //     setInjectedProvider(new ethers.providers.Web3Provider(provider));
+  // //   });
+
+  // //   // Subscribe to session disconnection
+  // //   provider.on("disconnect", (code, reason) => {
+  // //     console.log(code, reason);
+  // //     logoutOfWeb3Modal();
+  // //   });
+  //  }, [setInjectedProvider]); 
 
   // Changing network (on click button) To be Implemented. 
   // For now, this throws an error.. 
-  const changeNetwork = async () => {
-    try {
-        const { ethereum } = window;
+  // const changeNetwork = async () => {
+  //   try {
+  //       const { ethereum } = window;
         
-        ethereum.request({
-          method: "wallet_addEthereumChain",
-          params: [{
-              chainId: "0x5",
-              rpcUrls: ["https://eth-goerli.g.alchemy.com/v2/"],
-              chainName: "Goerli Test Network",
-              nativeCurrency: {
-                  name: "GoerliETH",
-                  symbol: "GoerliETH",
-                  decimals: 18
-              },
-              blockExplorerUrls: ["https://goerli.etherscan.io"]
-          }]
-      });
-    } catch (error) {
-      console.log(error);
-    }
-  }
+  //       ethereum.request({
+  //         method: "wallet_addEthereumChain",
+  //         params: [{
+  //             chainId: "0x5",
+  //             rpcUrls: ["https://eth-goerli.g.alchemy.com/v2/"],
+  //             chainName: "Goerli Test Network",
+  //             nativeCurrency: {
+  //                 name: "GoerliETH",
+  //                 symbol: "GoerliETH",
+  //                 decimals: 18
+  //             },
+  //             blockExplorerUrls: ["https://goerli.etherscan.io"]
+  //         }]
+  //     });
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }
 
   // issuing a new certificate. Signer is required. 
   const certify = async (userInput) => {
@@ -153,6 +266,7 @@ The following are functions to interact with ethereum contract.
       if (ethereum) {
         const provider = new ethers.providers.Web3Provider(ethereum, "any");
         const signer = provider.getSigner();
+
         const dcContract = new ethers.Contract(contractAddress, abi, signer);           
         let tx = await dcContract.certify(userInput[0], userInput[1], userInput[2]);
         setMessage("uploadInProgress")
@@ -328,15 +442,59 @@ The following are functions to interact with ethereum contract.
   useEffect(() => {
     // getProvider();
     setMessage('warningTestApp');
-    isWalletConnected()
+    // isWalletConnected()
     document.body.style.backgroundImage= `conic-gradient(from 90deg at 10% 15%, CornflowerBlue, fuchsia, salmon, CornflowerBlue)`;
     setHeightComponent(`${Math.round(document.documentElement.clientWidth * .38)}px`);
   }, []);
   
+  useEffect(() => {
+      // Assign the Web3Modal class to the reference object by setting it's `current` value
+      // The `current` value is persisted throughout as long as this page is open
+      web3ModalRef.current = new Web3Modal({
+      //   network: "goerli",
+      //   providerOptions: {},
+      //   disableInjectedProvider: false,
+      // });
+      // network: "goerli", 
+      cacheProvider: false, 
+      disableInjectedProvider: false,
+      theme: "light", 
+      providerOptions: {
+        walletconnect: {
+          package: WalletConnectProvider, // required
+          options: {
+            bridge: "https://polygon.bridge.walletconnect.org",
+            infuraId: INFURA_ID,
+            rpc: {
+              1: `https://mainnet.infura.io/v3/${INFURA_ID}`, // mainnet // For more WalletConnect providers: https://docs.walletconnect.org/quick-start/dapps/web3-provider#required
+              42: `https://kovan.infura.io/v3/${INFURA_ID}`,
+              100: "https://dai.poa.network", // xDai
+            },
+          },
+        },
+        fortmatic: {
+          package: Fortmatic, // required
+          options: {
+            key: "pk_live_5A7C91B2FC585A17", // required
+          },
+        },
+        authereum: {
+          package: Authereum, // required
+        },
+      },
+  })}, []);
+
+  // useEffect(() => {
+  //   if (web3Modal.cachedProvider) {
+  //     loadWeb3Modal();
+  //   }
+  // }, [loadWeb3Modal]);
+
   // everytime tab is changed, resets certificate list and userinput. 
   useEffect(() => {
     setCertificatesArray(null)
     setUserInput('')
+    
    // setMessage('invisible') 
   }, [tab]); 
 
@@ -359,7 +517,8 @@ Here the actual (one page) app is rendered.
           message, setMessage,
           walletAddress }}> 
         <NavBar connectWallet = {connectWallet} 
-                changeNetwork = {changeNetwork} /> 
+        // changeNetwork = {changeNetwork}
+                /> 
         <Messages /> 
         <FrontPage />
         <AboutPage />
