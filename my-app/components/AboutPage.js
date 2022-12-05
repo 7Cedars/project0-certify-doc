@@ -33,7 +33,10 @@ const AboutPage = () => {
                         color: "white"
                     }}
                 > 
-                    Certify.doc provides a single utility: It issues a record on the ethereum blockchain that relates two addresses (an issuer and recipient) to an offline document. 
+                    Certify.doc enables individuals and organisations to vouch for the authenticity of offline documents.  
+                    <br/>
+                    <br/>
+                    The dapp provides a single utility: It issues a record on the ethereum blockchain that relates two addresses (an issuer and recipient) to an offline document. 
                     These records are immutable, non-tradable and revokable. They are similar to non-fungible tokens (NFTs) but have a a few important differences.
                     <br/>
                     <br/>
@@ -52,8 +55,8 @@ const AboutPage = () => {
                     <li> Employers that certify authenticy of employers statements.</li> 
                     <li> Individuals that authenticate their wills. </li> 
                     <br/>
-                    In brief, certify.doc relates the social authority behind an ethereum address to a digital document, 
-                    and expresses a relationship between two social actors.
+                    In brief, certify.doc relates the social authority behind an ethereum address to an offline document, 
+                    and expresses a relationship between two entities.
                     <br/>
                     <br/>
                     {/* Still need to include links here. */}
