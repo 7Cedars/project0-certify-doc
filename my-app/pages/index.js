@@ -34,48 +34,6 @@ import CheckCertificates from "../components/CheckCertificates"
 import RenderCertificate from "../components/RenderCertificate"
 import IssueCertificate from "../components/IssueCertificate"
 
-// web3modal code examples from speedrunethereum's Austin Griffith.  
-// // See: 
-// const web3Modal = new Web3Modal({
-//   network: "mainnet", 
-//   cacheProvider: true, 
-//   theme: "light", 
-//   providerOptions: {
-//     walletconnect: {
-//       package: WalletConnectProvider, // required
-//       options: {
-//         bridge: "https://polygon.bridge.walletconnect.org",
-//         infuraId: INFURA_ID,
-//         rpc: {
-//           1: `https://mainnet.infura.io/v3/${INFURA_ID}`, // mainnet // For more WalletConnect providers: https://docs.walletconnect.org/quick-start/dapps/web3-provider#required
-//           42: `https://kovan.infura.io/v3/${INFURA_ID}`,
-//           100: "https://dai.poa.network", // xDai
-//         },
-//       },
-//     },
-// //     portis: {
-// //       display: {
-// //         logo: "https://user-images.githubusercontent.com/9419140/128913641-d025bc0c-e059-42de-a57b-422f196867ce.png",
-// //         name: "Portis",
-// //         description: "Connect to Portis App",
-// //       },
-// //       package: Portis,
-// //       options: {
-// //         id: "6255fb2b-58c8-433b-a2c9-62098c05ddc9",
-// //       },
-// //     },
-//     fortmatic: {
-//       package: Fortmatic, // required
-//       options: {
-//         key: "pk_live_5A7C91B2FC585A17", // required
-//       },
-//     },
-//     authereum: {
-//       package: Authereum, // required
-//     },
-//   },
-// });
-
 // Setup
 export default function Home() {
   // PART 0: setting all state and ref constants of the page. 
@@ -111,150 +69,81 @@ export default function Home() {
 The following are functions to interact with ethereum contract. 
 */
 
-const getSigner = async () => {
-    // Since we store `web3Modal` as a reference, we need to access the `current` value to get access to the underlying object
-  const provider = await web3ModalRef.current.connect();
-  const web3Provider = new ethers.providers.Web3Provider(provider);
-
-  // If user is not connected to the Goerli network, let them know and throw an error
-  const { chainId } = await web3Provider.getNetwork();
-  if (chainId !== 5) {
-    window.alert("Change the network to Goerli");
-    throw new Error("Change network to Goerli");
-  }
-    const signer = web3Provider.getSigner();
-    return signer;
-  }
-
-//   connectWallet: Connects the MetaMask wallet
-const connectWallet = async () => {
+// @dev: calls on the Web3Provider reference to create a new instance.
+// It returns signer, ethaddress, and (if available) ens name  
+const loadWeb3Modal= async () => {  
   try {
-    // Get the provider from web3Modal, which in our case is MetaMask
-    // When used for the first time, it prompts the user to connect their wallet
-    const signer = await getSigner();
-    const ethAddress = await signer.getAddress()
+    const provider = await web3ModalRef.current.connect();
+    let web3Provider = new ethers.providers.Web3Provider(provider);
+
+    const { chainId } = await web3Provider.getNetwork();
+    
+    if (chainId !== 5) {
+      setMessage('wrongNetwork');
+      setWalletAddress('wrongNetwork');
+    }
+
+    const signer = web3Provider.getSigner();
+    const ethAddress = await signer.getAddress(); 
+    const ens = await web3Provider.lookupAddress(ethAddress); 
+
     setWalletConnected(true);
     setWalletAddress(ethAddress); 
-  } catch (err) {
-    console.error(err);
+    if (ens) { setEnsName(ens) }; 
+
+    return { web3Provider, signer, ethAddress, ens };
+
+    } catch (err) {
+      console.error(err);
+    }
   }
-};
 
-  // // Connecting wallet (on click button) also check if ENS name is attached to address. 
-  // const connectWallet = async () => {
+  // @dev: Connects to web3Provider.
+  const connectWeb3 = async () => {
+      await loadWeb3Modal();
+  };
+  
+  // @dev: Disconnects web3Provider.
+  const disconnectWeb3 = async () => {
+    await web3ModalRef.current.clearCachedProvider();
+    console.log("disconnectWeb3 called.")
+    if (web3ModalRef.current && web3ModalRef.current.provider && typeof web3ModalRef.current.provider.disconnect == "function") {
+      await web3ModalRef.current.provider.disconnect();
+    }
+    setTimeout(() => {
+      window.location.reload();
+    }, 1);
+  };
+
+  // @dev: change chain to goerli network - on click .
+  const changeChain = async () => {
+    const ethereum = window.ethereum;
+    let switchTx;
     
-  //   try {
-  //     const provider = await web3ModalRef.current.connect();
-  //     const web3Provider = new ethers.providers.Web3Provider(provider);
-
-  //     const { chainId }  = await web3Provider.getNetwork();
-  //     // const ens = await web3Provider.lookupAddress(accounts[0]);
-
-  //     if (chainId == 5) {
-  //       setWalletAddress(accounts);
-  //       // if (ens) { setEnsName(ens) }  
-  //       console.log("walletAddress:", walletAddress);  
-  //                   // "ens: ", ens)  
-  //       setWalletConnected(true);
-        
-  //     } else {
-  //       setMessage('wrongNetwork');
-  //       setWalletAddress('wrongNetwork');
-  //     }
-      
-  //     return web3Provider;
-
-  //   } catch (error) {
-  //     console.log(error);
-  //     setWalletConnected(false);
-  //   }
-  // }
-
-  // // Check if Wallet is connected and if so, if address has ens name attached. 
-  // const isWalletConnected = async () => {
-  //     try {
-  //       const { ethereum } = window;
-  //       const accounts = await ethereum.request({ method: 'eth_accounts' })
-  //       const provider = new ethers.providers.Web3Provider(ethereum, "any");
-        
-  //       if (accounts.length > 0 ) { 
-  //         const { chainId }  = await provider.getNetwork();
-  //         const ens = await provider.lookupAddress(accounts[0]);
-  
-  //         if (chainId == 5) { 
-  //           setWalletAddress(accounts)
-  //           if (ens) { setEnsName(ens) }
-  //           console.log("walletAddress:", walletAddress, 
-  //                       "ens: ", ens)           
-  //         }
-  //         if (chainId != 5) {
-  //           setMessage('wrongNetwork');
-  //           setWalletAddress('wrongNetwork');
-  //         }
-  //       }
-  //       else {
-  //         console.log("No connected wallet.");
-  //       }
-  //     } catch (error) {
-  //       console.log("error: ", error);
-  //     }
-  //   }
-  
-  // const logoutOfWeb3Modal = async () => {
-  // //   await web3Modal.clearCachedProvider();
-  // //   if (injectedProvider && injectedProvider.provider && typeof injectedProvider.provider.disconnect == "function") {
-  // //     await injectedProvider.provider.disconnect();
-  // //   }
-  // //   setTimeout(() => {
-  // //     window.location.reload();
-  // //   }, 1);
-  // };
-
-  //  const loadWeb3Modal = useCallback(async () => {
-  //   const provider = await web3Modal.connect();
-  //   setInjectedProvider(new ethers.providers.Web3Provider(provider));
-
-  // //   provider.on("chainChanged", chainId => {
-  // //     console.log(`chain changed to ${chainId}! updating providers`);
-  // //     setInjectedProvider(new ethers.providers.Web3Provider(provider));
-  // //   });
-
-  // //   provider.on("accountsChanged", () => {
-  // //     console.log(`account changed!`);
-  // //     setInjectedProvider(new ethers.providers.Web3Provider(provider));
-  // //   });
-
-  // //   // Subscribe to session disconnection
-  // //   provider.on("disconnect", (code, reason) => {
-  // //     console.log(code, reason);
-  // //     logoutOfWeb3Modal();
-  // //   });
-  //  }, [setInjectedProvider]); 
-
-  // Changing network (on click button) To be Implemented. 
-  // For now, this throws an error.. 
-  // const changeNetwork = async () => {
-  //   try {
-  //       const { ethereum } = window;
-        
-  //       ethereum.request({
-  //         method: "wallet_addEthereumChain",
-  //         params: [{
-  //             chainId: "0x5",
-  //             rpcUrls: ["https://eth-goerli.g.alchemy.com/v2/"],
-  //             chainName: "Goerli Test Network",
-  //             nativeCurrency: {
-  //                 name: "GoerliETH",
-  //                 symbol: "GoerliETH",
-  //                 decimals: 18
-  //             },
-  //             blockExplorerUrls: ["https://goerli.etherscan.io"]
-  //         }]
-  //     });
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // }
+    try {
+        switchTx = await ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [
+          { "chainId": "0x5" } 
+        ] 
+        });
+      } catch (switchError) {
+        try {
+          switchTx = await ethereum.request({
+            method: "wallet_addEthereumChain",
+            params: {
+              chainId: "0x5",
+              chainName: "Goerli test network",
+              nativeCurrency: "GoerliETH",
+              rpcUrls: ["https://goerli.infura.io/v3/"],
+              blockExplorerUrls: ["https://goerli.etherscan.io"],
+            },
+          });
+        } catch (addError) {
+          // handle "add" error
+        }
+      }
+  };
 
   // issuing a new certificate. Signer is required. 
   const certify = async (userInput) => {
@@ -265,7 +154,7 @@ const connectWallet = async () => {
 
       if (ethereum) {
         const provider = new ethers.providers.Web3Provider(ethereum, "any");
-        const signer = provider.getSigner();
+        const signer = provider.loadWeb3Modal();
 
         const dcContract = new ethers.Contract(contractAddress, abi, signer);           
         let tx = await dcContract.certify(userInput[0], userInput[1], userInput[2]);
@@ -294,7 +183,7 @@ const connectWallet = async () => {
 
       if (ethereum) {
         const provider = new ethers.providers.Web3Provider(ethereum, "any");
-        const signer = provider.getSigner();
+        const signer = provider.loadWeb3Modal();
         const dcContract = new ethers.Contract(contractAddress, abi, signer);
         
         let tx = await dcContract.revokeCertificate(index);
@@ -484,18 +373,10 @@ const connectWallet = async () => {
       },
   })}, []);
 
-  // useEffect(() => {
-  //   if (web3Modal.cachedProvider) {
-  //     loadWeb3Modal();
-  //   }
-  // }, [loadWeb3Modal]);
-
   // everytime tab is changed, resets certificate list and userinput. 
   useEffect(() => {
     setCertificatesArray(null)
     setUserInput('')
-    
-   // setMessage('invisible') 
   }, [tab]); 
 
   // when certificates are listed, user input is reset.
@@ -516,8 +397,9 @@ Here the actual (one page) app is rendered.
           userInput, setUserInput,
           message, setMessage,
           walletAddress }}> 
-        <NavBar connectWallet = {connectWallet} 
-        // changeNetwork = {changeNetwork}
+        <NavBar connectWeb3 = {connectWeb3} 
+                disconnectWeb3 = { disconnectWeb3 }
+                changeChain = {changeChain}
                 /> 
         <Messages /> 
         <FrontPage />

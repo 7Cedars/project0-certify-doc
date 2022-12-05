@@ -73,6 +73,7 @@ const Messages = () => {
                     secondary: 'Uploading certificates is only possible when connected to an Ethereum wallet through MetaMask.',
                     visible: true
                 }
+                setTimeout(() => { setMessage('invisible') }, 5000)
     }
 
     if (message === "uploadInProgress") {

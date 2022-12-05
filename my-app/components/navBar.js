@@ -9,7 +9,7 @@ import { Button, Grid, Icon, Menu, Segment } from "semantic-ui-react";
 import 'semantic-ui-css/semantic.min.css';
 
 // creates the Navbar at the top of the page. 
-const NavBar = ({ connectWallet }) => { // changeNetwork
+const NavBar = ({ connectWeb3, disconnectWeb3, changeChain }) => {
     //  { getSigner }
 
     // navbar interacts with three contextual elements: tab and settab (reading and setting selected tab) 
@@ -25,10 +25,15 @@ const NavBar = ({ connectWallet }) => { // changeNetwork
 
           return (
             <div>
-            <Button  primary 
-                onClick = { connectWallet } >
-                Connect to wallet (Currently in read only mode) 
+            <Button.Group color='blue'>
+            <Button  disabled >
+                Read only mode 
             </Button>
+            <Button  primary 
+                onClick = { connectWeb3 } >
+                Connect
+            </Button>
+            </Button.Group>
             </div>
           );
         }
@@ -38,9 +43,15 @@ const NavBar = ({ connectWallet }) => { // changeNetwork
         if (walletAddress == 'wrongNetwork') {
             return (
             <div> 
-              <Button basic color = "red" >
-                Incorrect network. Please change to Goerli. 
-              </Button>
+                <Button.Group color='red'>
+                <Button disabled> 
+                    Incorrect chain
+                </Button>
+                <Button basic color = "red"  
+                         onClick = { changeChain } >
+                    Change to Goerli
+                </Button>
+                </Button.Group>
               </div>
             );
           } else {
@@ -49,17 +60,29 @@ const NavBar = ({ connectWallet }) => { // changeNetwork
             if ( ensName ) {
             return (
                 <div> 
-                <Button basic color = "green"  > 
+                <Button.Group color='green'>
+                <Button disabled> 
                     Connected to: { ensName }
                 </Button>
+                <Button basic color = "green"  
+                        onClick = { disconnectWeb3 } >
+                    disconnect
+                </Button>
+                </Button.Group>
                 </div>
             );
             } else {
                 return (
                     <div> 
-                    <Button basic color = "green"  > 
+                    <Button.Group color='green'>
+                    <Button disabled > 
                         Connected to: {walletAddress.substring(0,5)}...{walletAddress.substring(38,42)}  
                     </Button>
+                    <Button basic color = "grey" 
+                            onClick = { disconnectWeb3 } > 
+                        disconnect
+                    </Button>
+                    </Button.Group>
                     </div>
                 );
             }
