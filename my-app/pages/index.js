@@ -6,9 +6,10 @@ If they wish to issue a certificate, they are introduced to MetaMask,
 Including a link and explanation. 
 It does not use all functionalities of the solidity contract yet. 
 
-please note: cc
-I built the app while learning solidity and js. It is an personal educational project.  
+please note: 
+I built the app while learning solidity and js. It is a personal educational project.  
 For an extensive explanation of the app and its aims, see the readme file and about section in the app
+Acknowledgments below, at the end of the code. 
 */ 
 
 // importing dependencies. 
@@ -168,7 +169,7 @@ const loadWeb3Modal= async () => {
       setMessage("errorUpload")
       console.error(err.message);
     }
-    
+
   setLoading(null)
   }
 
@@ -429,10 +430,16 @@ const loadWeb3Modal= async () => {
       )
 } 
 
-// References: 
-// https://codesandbox.io/s/j43b10?file=/src/App.js:469-571 // 
-// sandbox example: https://codesandbox.io/s/j43b10?file=/src/App.js (not with react though, needed to add useEffect)
-// main part is from web3dao learning course. -- the useContext tick is from youtube: https://www.youtube.com/watch?v=vYWMyOyrbYU
-// Also large chunck is from Alchemy's road2web3. 
-// NB check LEarnweb3.io class on ENS names to refactor this page. Insert ENS names
-// https://learnweb3.io/courses/6394ea7c-0ad6-4a4a-879f-7f9756bc5976/lessons/23bacf56-3ceb-457a-a97d-419fe3b333d9 
+/* 
+* Acknowledgements: 
+* Many thanks to:  
+* learnweb3Dao -- the  web3dao 
+* Another large was taken from Alchemy's road2web3. Especially the first three weeks. 
+* Finally, the login logic was updated with the use of examples by Austin Griffith's Speedrunethereum. 
+
+* Other examples I used: 
+* https://codesandbox.io/s/j43b10?file=/src/App.js:469-571 // 
+* sandbox example: https://codesandbox.io/s/j43b10?file=/src/App.js (not with react though, needed to add useEffect)
+* the useContext tick is from youtube: https://www.youtube.com/watch?v=vYWMyOyrbYU
+* https://learnweb3.io/courses/6394ea7c-0ad6-4a4a-879f-7f9756bc5976/lessons/23bacf56-3ceb-457a-a97d-419fe3b333d9 
+*/ 

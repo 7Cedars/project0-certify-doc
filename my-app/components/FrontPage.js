@@ -83,13 +83,13 @@ const FrontPage = () => {
                 It issues certificates of authenticity that are immutable, non-tradable and revokable. 
                 <br/>
                 <br/>
-                Checking the authenticy of a document is as easy as submitting it to this dapp. 
+                Checking the authenticity of a document is as easy as submitting it to this dapp. 
                 </Header>
                 <Button primary 
                         size='huge'
                         onClick={() => setTab('DocHash_Certs')}
                         style={{ marginTop: '.9rem' }}>
-                        Check Authenticity
+                        Check authenticity
                 </Button>
             </Segment>
         </Container>
