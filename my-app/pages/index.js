@@ -83,6 +83,11 @@ const loadWeb3Modal= async () => {
       setWalletAddress('wrongNetwork');
     }
 
+    // web3Provider.on("chainChanged", chainId => {
+    //   console.log(`chain changed to ${chainId}! updating providers`);
+    //   window.location.reload();
+    // });
+
     const signer = web3Provider.getSigner();
     const ethAddress = await signer.getAddress(); 
     const ens = await web3Provider.lookupAddress(ethAddress); 
@@ -143,69 +148,57 @@ const loadWeb3Modal= async () => {
           // handle "add" error
         }
       }
+      loadWeb3Modal()
   };
 
-  // issuing a new certificate. Signer is required. 
+  // @dev issuing a new certificate. Signer required. 
   const certify = async (userInput) => {
     setLoading('upload')
 
     try {
-      const { ethereum } = window;
-
-      if (ethereum) {
-        const provider = new ethers.providers.Web3Provider(ethereum, "any");
-        const signer = provider.loadWeb3Modal();
-
-        const dcContract = new ethers.Contract(contractAddress, abi, signer);           
-        let tx = await dcContract.certify(userInput[0], userInput[1], userInput[2]);
-        setMessage("uploadInProgress")
-        // console.log(tx.hash) 
-
-        await tx.wait();
-        setMessage("uploadSuccessful")
-      }
-      else { setMessage("errorUpload") }
+      const { signer } = await loadWeb3Modal();
+      const dcContract = new ethers.Contract(contractAddress, abi, signer);           
+      let tx = await dcContract.certify(userInput[0], userInput[1], userInput[2]);
+     
+      setMessage("uploadInProgress")
+      await tx.wait();
+      setMessage("uploadSuccessful")
 
     } catch (err) { 
       setMessage("errorUpload")
       console.error(err.message);
     }
-
+    
   setLoading(null)
   }
 
-  // Revoke a certificate. Signer required. 
+  // @dev Revoke a certificate. Signer required. 
   const revokeCertificate = async (index) => {
     setLoading(index)
     
     try {
-      const { ethereum } = window;
-
-      if (ethereum) {
-        const provider = new ethers.providers.Web3Provider(ethereum, "any");
-        const signer = provider.loadWeb3Modal();
-        const dcContract = new ethers.Contract(contractAddress, abi, signer);
+      const { signer } = await loadWeb3Modal();
+      const dcContract = new ethers.Contract(contractAddress, abi, signer);
+      let tx = await dcContract.revokeCertificate(index);
         
-        let tx = await dcContract.revokeCertificate(index);
-        
-        setMessage("revokeInProgress")
-        await tx.wait();
+      setMessage("revokeInProgress")
+      await tx.wait();
+      } catch (err) {
+      console.error(err.message);
       }
 
-    } catch (err) {
-      console.error(err.message);
-    }
     setMessage("revokeSuccessful")
     setLoading(null)
   }
 
   /* 
+  * @dev 
   * Note that the following functions are read only. Only a provider is required. 
-  * When a signer is not required, we do NOT call the MetaMask web3provider. 
-  * Instead, access is provided through alchemy API which is accesible to every user.
+  * When a signer is not required, we do NOT call signer from the web3provider. 
+  * Instead, access is provided through alchemy API which is accesible to any user.
   */
 
-  // Checking certificates by docHash. Returns an array of indexes. Signer not required. 
+  // @dev Checking certificates by docHash. Returns an array of indexes. Signer not required. 
   const checkDocHash = async (userInput) => {
 
     try {
@@ -219,7 +212,7 @@ const loadWeb3Modal= async () => {
     }
   }
 
-  // Checking certificates by address of issuer. Returns an array of indexes.  Signer not required.
+  // @dev Checking certificates by address of issuer. Returns an array of indexes.  Signer not required.
   const checkIssuer = async (userInput) => {
     try {
       const provider = new ethers.providers.AlchemyProvider(5, apiKey);
@@ -232,7 +225,7 @@ const loadWeb3Modal= async () => {
     }
   }
 
-  // Checking certificates by address of recipient. Returns an array of indexes.  Signer not required.
+  // @dev Checking certificates by address of recipient. Returns an array of indexes.  Signer not required.
   const checkRecipient = async (userInput) => {
     try {
       const provider = new ethers.providers.AlchemyProvider(5, apiKey);
@@ -245,7 +238,7 @@ const loadWeb3Modal= async () => {
     }
   }
 
-  // Takes an array of indexes, and calls each certificate. No signer required.
+  // @dev Takes an array of indexes, and calls each certificate. No signer required.
   const callCertificate = async (index) => {
 
     try {
@@ -275,7 +268,7 @@ const loadWeb3Modal= async () => {
     }
   }
 
-  // Passes user input to the requested (read only) function, based on the selected tab. 
+  // @dev Passes user input to the requested (read only) function, based on the selected tab. 
   // All these functions return index of certificates 
   const handleSubmit = async (e) => {
     e.preventDefault(); 
@@ -300,7 +293,7 @@ const loadWeb3Modal= async () => {
     //     certificates.concat(_certificate)
     // })
 
-    // calls data of each certificate, based on index received from previous call. 
+    // @dev calls data of each certificate, based on index received from previous call. 
     try { 
       if (data.length === 0) {
         certificates.push(
@@ -324,14 +317,12 @@ const loadWeb3Modal= async () => {
   }
 
   /* 
-  * What follows are the useEffect calls: changing state according to some change in another state. 
+  * @dev  What follows are the useEffect calls: changing state according to some change in another state. 
   */
 
   // at startup calls checks if wallet is connected, sets a background image and sets dynamic height for component. 
   useEffect(() => {
-    // getProvider();
     setMessage('warningTestApp');
-    // isWalletConnected()
     document.body.style.backgroundImage= `conic-gradient(from 90deg at 10% 15%, CornflowerBlue, fuchsia, salmon, CornflowerBlue)`;
     setHeightComponent(`${Math.round(document.documentElement.clientWidth * .38)}px`);
   }, []);
@@ -340,52 +331,47 @@ const loadWeb3Modal= async () => {
       // Assign the Web3Modal class to the reference object by setting it's `current` value
       // The `current` value is persisted throughout as long as this page is open
       web3ModalRef.current = new Web3Modal({
-      //   network: "goerli",
-      //   providerOptions: {},
-      //   disableInjectedProvider: false,
-      // });
-      // network: "goerli", 
-      cacheProvider: false, 
-      disableInjectedProvider: false,
-      theme: "light", 
-      providerOptions: {
-        walletconnect: {
-          package: WalletConnectProvider, // required
-          options: {
-            bridge: "https://polygon.bridge.walletconnect.org",
-            infuraId: INFURA_ID,
-            rpc: {
-              1: `https://mainnet.infura.io/v3/${INFURA_ID}`, // mainnet // For more WalletConnect providers: https://docs.walletconnect.org/quick-start/dapps/web3-provider#required
-              42: `https://kovan.infura.io/v3/${INFURA_ID}`,
-              100: "https://dai.poa.network", // xDai
+        cacheProvider: false, 
+        disableInjectedProvider: false,
+        theme: "light", 
+        providerOptions: {
+          walletconnect: {
+            package: WalletConnectProvider, // required
+            options: {
+              bridge: "https://polygon.bridge.walletconnect.org",
+              infuraId: INFURA_ID,
+              rpc: {
+                1: `https://mainnet.infura.io/v3/${INFURA_ID}`, // mainnet // For more WalletConnect providers: https://docs.walletconnect.org/quick-start/dapps/web3-provider#required
+                42: `https://kovan.infura.io/v3/${INFURA_ID}`,
+                100: "https://dai.poa.network", // xDai
+              },
             },
           },
-        },
-        fortmatic: {
-          package: Fortmatic, // required
-          options: {
-            key: "pk_live_5A7C91B2FC585A17", // required
+          fortmatic: {
+            package: Fortmatic, // required
+            options: {
+              key: "pk_live_5A7C91B2FC585A17", // required
+            },
+          },
+          authereum: {
+            package: Authereum, // required
           },
         },
-        authereum: {
-          package: Authereum, // required
-        },
-      },
   })}, []);
 
-  // everytime tab is changed, resets certificate list and userinput. 
+  // @dev everytime tab is changed, resets certificate list and userinput. 
   useEffect(() => {
     setCertificatesArray(null)
     setUserInput('')
   }, [tab]); 
 
-  // when certificates are listed, user input is reset.
+  // @dev when certificates are listed, user input is reset.
   useEffect(() => {
     setUserInput('')
   }, [certificatesArray]); 
 
 /*
-Here the actual (one page) app is rendered.
+@dev Here the actual (one page) app is rendered.
 */
 
   return (
