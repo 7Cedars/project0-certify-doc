@@ -9,7 +9,7 @@ import { Button, Grid, Icon, Menu, Segment } from "semantic-ui-react";
 import 'semantic-ui-css/semantic.min.css';
 
 // creates the Navbar at the top of the page. 
-const NavBar = ({ connectWeb3, disconnectWeb3, changeChain }) => {
+const NavBar = ({ connectWeb3, disconnectWeb3, changeChain, web3ChainId }) => {
     //  { getSigner }
 
     // navbar interacts with three contextual elements: tab and settab (reading and setting selected tab) 
@@ -40,7 +40,7 @@ const NavBar = ({ connectWeb3, disconnectWeb3, changeChain }) => {
 
         // If wallet is on the wron network, return a red button requesting to change network. 
         // Button does not have any functionality at the moment. (hence basic color scheme)
-        if (walletAddress == 'wrongNetwork') {
+        if (web3ChainId !== 5) {
             return (
             <div> 
                 <Button.Group color='red'>

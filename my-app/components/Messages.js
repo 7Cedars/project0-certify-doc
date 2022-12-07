@@ -70,7 +70,7 @@ const Messages = () => {
     if (message === "errorUpload") {
         content = { color: 'red',
                     primary: 'Unable to upload certificate. Are you connected to an Ethereum wallet?',
-                    secondary: 'Uploading certificates is only possible when connected to an Ethereum wallet through MetaMask.',
+                    secondary: 'Uploading certificates is only possible when connected to an Ethereum wallet.',
                     visible: true
                 }
                 setTimeout(() => { setMessage('invisible') }, 5000)
@@ -106,6 +106,14 @@ const Messages = () => {
         content = { color: 'green',
                     primary: 'Revoke succesfull.',
                     secondary: 'Your certificate has been succesfully revoked.',
+                    visible: true
+                }
+                setTimeout(() => { setMessage('invisible') }, 5000)
+    }
+    if (message === "errorRevoke") {
+        content = { color: 'red',
+                    primary: 'Unable to revoke certificate. Are you connected to an Ethereum Network?',
+                    secondary: 'Revoking certificates is only possible when connected to an Ethereum wallet.',
                     visible: true
                 }
                 setTimeout(() => { setMessage('invisible') }, 5000)

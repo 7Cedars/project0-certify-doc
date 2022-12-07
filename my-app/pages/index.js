@@ -65,6 +65,12 @@ export default function Home() {
   const [certificatesArray, setCertificatesArray] = useState(null);
   // See loading web3modal below. 
   const web3ModalRef = useRef();
+  //
+  const [web3Provider, setWeb3Provider] = useState();
+  //
+  const [web3Library, setWeb3Library] = useState(null);
+  //
+  const [web3ChainId, setWeb3ChainId] = useState(null);
 
 /* 
 The following are functions to interact with ethereum contract. 
@@ -72,42 +78,34 @@ The following are functions to interact with ethereum contract.
 
 // @dev: calls on the Web3Provider reference to create a new instance.
 // It returns signer, ethaddress, and (if available) ens name  
-const loadWeb3Modal= async () => {  
-  try {
+// NB: the use of useCallback was straight from eth scaffold. Thanks! 
+  const connectWeb3 = useCallback(async () => { 
+  
     const provider = await web3ModalRef.current.connect();
-    let web3Provider = new ethers.providers.Web3Provider(provider);
+    const library = new ethers.providers.Web3Provider(provider);
+    setWeb3Provider(provider)
+    setWeb3Library(library);
 
-    const { chainId } = await web3Provider.getNetwork();
-    
-    if (chainId !== 5) {
-      setMessage('wrongNetwork');
-      setWalletAddress('wrongNetwork');
-    }
+    provider.on("chainChanged", _chainId => {
+      console.log(`chain changed to ${_chainId}! updating providers`);
+      setWeb3Library(new ethers.providers.Web3Provider(provider));
+    });
 
-    // web3Provider.on("chainChanged", chainId => {
-    //   console.log(`chain changed to ${chainId}! updating providers`);
-    //   window.location.reload();
-    // });
-
-    const signer = web3Provider.getSigner();
-    const ethAddress = await signer.getAddress(); 
-    const ens = await web3Provider.lookupAddress(ethAddress); 
+    provider.on("accountsChanged", _account => {
+      console.log(`account changed to ${_account}`);
+      setWeb3Library(new ethers.providers.Web3Provider(provider));
+    });
 
     setWalletConnected(true);
-    setWalletAddress(ethAddress); 
-    if (ens) { setEnsName(ens) }; 
+  }, [web3Library]);
 
-    return { web3Provider, signer, ethAddress, ens };
+  // useEffect(() => {
+  //   if (web3ModalRef.cachedProvider) {
+  //     connectWeb3();
+  //   }
+  // }, [connectWeb3]);
 
-    } catch (err) {
-      console.error(err);
-    }
-  }
 
-  // @dev: Connects to web3Provider.
-  const connectWeb3 = async () => {
-      await loadWeb3Modal();
-  };
   
   // @dev: Disconnects web3Provider.
   const disconnectWeb3 = async () => {
@@ -121,13 +119,13 @@ const loadWeb3Modal= async () => {
     }, 1);
   };
 
-  // @dev: change chain to goerli network - on click .
+  // @dev: change chain to goerli network
+  // @Dev: code from speedrunethereum. 
   const changeChain = async () => {
     const ethereum = window.ethereum;
-    let switchTx;
-    
+        
     try {
-        switchTx = await ethereum.request({
+        await ethereum.request({
         method: "wallet_switchEthereumChain",
         params: [
           { "chainId": "0x5" } 
@@ -135,7 +133,7 @@ const loadWeb3Modal= async () => {
         });
       } catch (switchError) {
         try {
-          switchTx = await ethereum.request({
+          await ethereum.request({
             method: "wallet_addEthereumChain",
             params: {
               chainId: "0x5",
@@ -147,30 +145,27 @@ const loadWeb3Modal= async () => {
           });
         } catch (addError) {
           // handle "add" error
-        }
+        } 
       }
-      loadWeb3Modal()
+
   };
 
   // @dev issuing a new certificate. Signer required. 
   const certify = async (userInput) => {
     setLoading('upload')
-
-    try {
-      const { signer } = await loadWeb3Modal();
+      try {
+      const signer = web3Library.getSigner() 
       const dcContract = new ethers.Contract(contractAddress, abi, signer);           
       let tx = await dcContract.certify(userInput[0], userInput[1], userInput[2]);
-     
+    
       setMessage("uploadInProgress")
       await tx.wait();
       setMessage("uploadSuccessful")
-
     } catch (err) { 
       setMessage("errorUpload")
       console.error(err.message);
     }
-
-  setLoading(null)
+    setLoading(null)
   }
 
   // @dev Revoke a certificate. Signer required. 
@@ -178,17 +173,18 @@ const loadWeb3Modal= async () => {
     setLoading(index)
     
     try {
-      const { signer } = await loadWeb3Modal();
+      const signer = web3Library.getSigner() 
       const dcContract = new ethers.Contract(contractAddress, abi, signer);
       let tx = await dcContract.revokeCertificate(index);
         
       setMessage("revokeInProgress")
       await tx.wait();
+      setMessage("revokeSuccessful")
       } catch (err) {
+      setMessage("errorRevoke")
       console.error(err.message);
       }
-
-    setMessage("revokeSuccessful")
+    
     setLoading(null)
   }
 
@@ -326,38 +322,35 @@ const loadWeb3Modal= async () => {
     setMessage('warningTestApp');
     document.body.style.backgroundImage= `conic-gradient(from 90deg at 10% 15%, CornflowerBlue, fuchsia, salmon, CornflowerBlue)`;
     setHeightComponent(`${Math.round(document.documentElement.clientWidth * .38)}px`);
-  }, []);
   
-  useEffect(() => {
-      // Assign the Web3Modal class to the reference object by setting it's `current` value
-      // The `current` value is persisted throughout as long as this page is open
-      web3ModalRef.current = new Web3Modal({
-        cacheProvider: false, 
-        disableInjectedProvider: false,
-        theme: "light", 
-        providerOptions: {
-          walletconnect: {
-            package: WalletConnectProvider, // required
-            options: {
-              bridge: "https://polygon.bridge.walletconnect.org",
-              infuraId: INFURA_ID,
-              rpc: {
-                1: `https://mainnet.infura.io/v3/${INFURA_ID}`, // mainnet // For more WalletConnect providers: https://docs.walletconnect.org/quick-start/dapps/web3-provider#required
-                42: `https://kovan.infura.io/v3/${INFURA_ID}`,
-                100: "https://dai.poa.network", // xDai
-              },
+    // 
+    web3ModalRef.current = new Web3Modal({
+      cacheProvider: false, 
+      disableInjectedProvider: false,
+      theme: "light", 
+      providerOptions: {
+        walletconnect: {
+          package: WalletConnectProvider, // required
+          options: {
+            bridge: "https://polygon.bridge.walletconnect.org",
+            infuraId: INFURA_ID,
+            rpc: {
+              1: `https://mainnet.infura.io/v3/${INFURA_ID}`, // mainnet // For more WalletConnect providers: https://docs.walletconnect.org/quick-start/dapps/web3-provider#required
+              42: `https://kovan.infura.io/v3/${INFURA_ID}`,
+              100: "https://dai.poa.network", // xDai
             },
-          },
-          fortmatic: {
-            package: Fortmatic, // required
-            options: {
-              key: "pk_live_5A7C91B2FC585A17", // required
-            },
-          },
-          authereum: {
-            package: Authereum, // required
           },
         },
+        fortmatic: {
+          package: Fortmatic, // required
+          options: {
+            key: "pk_live_5A7C91B2FC585A17", // required
+          },
+        },
+        authereum: {
+          package: Authereum, // required
+        },
+      },
   })}, []);
 
   // @dev everytime tab is changed, resets certificate list and userinput. 
@@ -371,10 +364,27 @@ const loadWeb3Modal= async () => {
     setUserInput('')
   }, [certificatesArray]); 
 
+  // NB: TO DO 
+  useEffect(() => {
+    if (web3Library) async =>  {
+      let library = web3Library 
+    
+      console.log("web3Library: ", web3Library)
+      console.log("Library: ", library.getNetwork() )
+    // const signer = web3Library.getSigner();
+    // const { chainId } = web3Library.getNetwork();
+    // const ethAddress = signer.getAddress();    
+    // setWalletAddress(ethAddress);
+      // setWeb3ChainId(web3Library._network.chainId);
+    }
+    // try {
+    //   const ens = web3Library.lookupAddress(ethAddress); 
+    //   setEnsName(ens)
+    // } catch { "No ENS found" }; 
+  }, [web3Library]); 
 /*
 @dev Here the actual (one page) app is rendered.
 */
-
   return (
       <div > 
         <UserContext.Provider value={{ 
@@ -387,6 +397,7 @@ const loadWeb3Modal= async () => {
         <NavBar connectWeb3 = {connectWeb3} 
                 disconnectWeb3 = { disconnectWeb3 }
                 changeChain = {changeChain}
+                web3ChainId = { web3ChainId }
                 /> 
         <Messages /> 
         <FrontPage />
@@ -436,6 +447,8 @@ const loadWeb3Modal= async () => {
 * learnweb3Dao -- the  web3dao 
 * Another large was taken from Alchemy's road2web3. Especially the first three weeks. 
 * Finally, the login logic was updated with the use of examples by Austin Griffith's Speedrunethereum. 
+* Helsinki Fullstack OpenCourse helped out a lot with all things react, hooks & javascript. 
+* Any bugs are fully and only my own. 
 
 * Other examples I used: 
 * https://codesandbox.io/s/j43b10?file=/src/App.js:469-571 // 
