@@ -54,7 +54,7 @@ export default function Home() {
   // keeps track of meesaging to users. Both error and success messages.  
   const [message, setMessage] = useState('invisible');
   // keeps track if a wallet has been connected to the app, and if so - what address.  
-  const [walletAddress, setWalletAddress] = useState(null);
+  const [walletAddress, setWalletAddress] = useState("0x0000000000000000000000000");
   // keeps track if a wallet has been connected to the app, and if so - what address.  
   const [walletConnected, setWalletConnected] = useState(false);
   // keeps track if a wallet has a linked Ethereum Name.  
@@ -68,44 +68,29 @@ export default function Home() {
   //
   const [web3Provider, setWeb3Provider] = useState();
   //
-  const [web3Library, setWeb3Library] = useState(null);
-  //
   const [web3ChainId, setWeb3ChainId] = useState(null);
 
-/* 
-The following are functions to interact with ethereum contract. 
-*/
 
-// @dev: calls on the Web3Provider reference to create a new instance.
-// It returns signer, ethaddress, and (if available) ens name  
-// NB: the use of useCallback was straight from eth scaffold. Thanks! 
+  /* 
+  The following are functions to connect to and interact with various types of blockchains 
+  */
+
+  // @dev: calls on the Web3Provider reference to create a new instance.
+  // NB: the use of useCallback was straight from speedrunethereum examples. Thanks! 
   const connectWeb3 = useCallback(async () => { 
   
     const provider = await web3ModalRef.current.connect();
-    const library = new ethers.providers.Web3Provider(provider);
-    setWeb3Provider(provider)
-    setWeb3Library(library);
+    setWeb3Provider( new ethers.providers.Web3Provider(provider) ); 
+    setWalletConnected(true);
 
     provider.on("chainChanged", _chainId => {
-      console.log(`chain changed to ${_chainId}! updating providers`);
-      setWeb3Library(new ethers.providers.Web3Provider(provider));
+      setWeb3Provider(new ethers.providers.Web3Provider(provider));
     });
 
     provider.on("accountsChanged", _account => {
-      console.log(`account changed to ${_account}`);
-      setWeb3Library(new ethers.providers.Web3Provider(provider));
+      setWeb3Provider(new ethers.providers.Web3Provider(provider));
     });
-
-    setWalletConnected(true);
-  }, [web3Library]);
-
-  // useEffect(() => {
-  //   if (web3ModalRef.cachedProvider) {
-  //     connectWeb3();
-  //   }
-  // }, [connectWeb3]);
-
-
+  }, [web3Provider]);
   
   // @dev: Disconnects web3Provider.
   const disconnectWeb3 = async () => {
@@ -118,6 +103,26 @@ The following are functions to interact with ethereum contract.
       window.location.reload();
     }, 1);
   };
+
+  // @dev: updates website state of address, chainId, ENSname (triggered following update of web3Provider). 
+  const updateWeb3 = async (signer) => {
+    try {
+      const { chainId } = await web3Provider.getNetwork();
+      const address = await signer.getAddress(); 
+      setWeb3ChainId (chainId); 
+      setWalletAddress(address); 
+      console.log (`updateWeb3 triggered. ChainID: ${chainId}. Address: ${address}.`)
+      try { 
+        const ens = await web3Provider.lookupAddress(address);
+        setEnsName(ens)
+        console.log(`ENS update: ${ens}.`)
+      } catch (err) {
+        console.log('ENS not supported by chain')
+      }   
+    } catch (err) {
+      console.error(err.message);
+    } 
+  }
 
   // @dev: change chain to goerli network
   // @Dev: code from speedrunethereum. 
@@ -147,14 +152,17 @@ The following are functions to interact with ethereum contract.
           // handle "add" error
         } 
       }
-
   };
+
+  /* 
+  The following are functions to interact with the CeritfyDoc.sol contract. 
+  */
 
   // @dev issuing a new certificate. Signer required. 
   const certify = async (userInput) => {
     setLoading('upload')
       try {
-      const signer = web3Library.getSigner() 
+      const signer = web3Provider.getSigner() 
       const dcContract = new ethers.Contract(contractAddress, abi, signer);           
       let tx = await dcContract.certify(userInput[0], userInput[1], userInput[2]);
     
@@ -173,7 +181,7 @@ The following are functions to interact with ethereum contract.
     setLoading(index)
     
     try {
-      const signer = web3Library.getSigner() 
+      const signer = web3Provider.getSigner() 
       const dcContract = new ethers.Contract(contractAddress, abi, signer);
       let tx = await dcContract.revokeCertificate(index);
         
@@ -226,7 +234,7 @@ The following are functions to interact with ethereum contract.
   const checkRecipient = async (userInput) => {
     try {
       const provider = new ethers.providers.AlchemyProvider(5, apiKey);
-      const dcContract = new ethers.Contract(contractAddress, abi, provider);
+      const dcContract = new ethers.Contract(contractAddress, abi, provider);      
       const certificateIndex = await dcContract.checkRecipient(userInput);
       
       return certificateIndex
@@ -314,7 +322,7 @@ The following are functions to interact with ethereum contract.
   }
 
   /* 
-  * @dev  What follows are the useEffect calls: changing state according to some change in another state. 
+  * @dev  What follows are the useEffect calls: changing state of website according to some change in another state. 
   */
 
   // at startup calls checks if wallet is connected, sets a background image and sets dynamic height for component. 
@@ -323,7 +331,6 @@ The following are functions to interact with ethereum contract.
     document.body.style.backgroundImage= `conic-gradient(from 90deg at 10% 15%, CornflowerBlue, fuchsia, salmon, CornflowerBlue)`;
     setHeightComponent(`${Math.round(document.documentElement.clientWidth * .38)}px`);
   
-    // 
     web3ModalRef.current = new Web3Modal({
       cacheProvider: false, 
       disableInjectedProvider: false,
@@ -364,24 +371,14 @@ The following are functions to interact with ethereum contract.
     setUserInput('')
   }, [certificatesArray]); 
 
-  // NB: TO DO 
+  // @dev when web3Provider is updated, the function updateWeb3 is called that updates states of address, chainID and ENS in webapp.  
   useEffect(() => {
-    if (web3Library) async =>  {
-      let library = web3Library 
-    
-      console.log("web3Library: ", web3Library)
-      console.log("Library: ", library.getNetwork() )
-    // const signer = web3Library.getSigner();
-    // const { chainId } = web3Library.getNetwork();
-    // const ethAddress = signer.getAddress();    
-    // setWalletAddress(ethAddress);
-      // setWeb3ChainId(web3Library._network.chainId);
-    }
-    // try {
-    //   const ens = web3Library.lookupAddress(ethAddress); 
-    //   setEnsName(ens)
-    // } catch { "No ENS found" }; 
-  }, [web3Library]); 
+    if (web3Provider) {
+      const signer = web3Provider.getSigner() 
+      updateWeb3(signer)
+  }
+  }, [web3Provider]); 
+  
 /*
 @dev Here the actual (one page) app is rendered.
 */
@@ -393,7 +390,7 @@ The following are functions to interact with ethereum contract.
           loading, setLoading, 
           userInput, setUserInput,
           message, setMessage,
-          walletAddress }}> 
+          walletAddress, walletConnected }}> 
         <NavBar connectWeb3 = {connectWeb3} 
                 disconnectWeb3 = { disconnectWeb3 }
                 changeChain = {changeChain}

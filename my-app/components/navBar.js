@@ -14,14 +14,14 @@ const NavBar = ({ connectWeb3, disconnectWeb3, changeChain, web3ChainId }) => {
 
     // navbar interacts with three contextual elements: tab and settab (reading and setting selected tab) 
     // and walletAddress: logging in with a wallet. 
-    const { tab, setTab, walletAddress, ensName } = useContext(UserContext);
+    const { tab, setTab, walletAddress, ensName, walletConnected } = useContext(UserContext);
 
     // The login button changes appearance with user being logged in or not.
     // Login is assessed by (non)existance of const walletAddress. 
     const renderButton = () => {
 
         // If wallet is not connected, return a button which allows them to connect their wllet
-        if (!walletAddress) {
+        if (walletConnected == false) {
 
           return (
             <div>
@@ -38,9 +38,9 @@ const NavBar = ({ connectWeb3, disconnectWeb3, changeChain, web3ChainId }) => {
           );
         }
 
-        // If wallet is on the wron network, return a red button requesting to change network. 
+        // If wallet is on the wrong network, return a red button requesting to change network. 
         // Button does not have any functionality at the moment. (hence basic color scheme)
-        if (web3ChainId !== 5) {
+        if (walletConnected && web3ChainId !== 5) {
             return (
             <div> 
                 <Button.Group color='red'>
@@ -64,7 +64,7 @@ const NavBar = ({ connectWeb3, disconnectWeb3, changeChain, web3ChainId }) => {
                 <Button disabled> 
                     Connected to: { ensName }
                 </Button>
-                <Button basic color = "green"  
+                <Button basic color = "grey"  
                         onClick = { disconnectWeb3 } >
                     disconnect
                 </Button>
