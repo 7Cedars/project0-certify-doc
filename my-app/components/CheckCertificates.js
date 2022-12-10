@@ -9,7 +9,6 @@ import { Container, Button, Icon, Segment, Form, Input, Header } from "semantic-
 import { utils } from "ethers"; 
 
 let fileInput; 
-
  
 const CheckCertificates = ({ handleSubmit }) => {
 

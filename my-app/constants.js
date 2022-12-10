@@ -1,8 +1,37 @@
+import Portis from "@portis/web3";
+import WalletConnectProvider from "@walletconnect/web3-provider";
+import Authereum from "authereum";
+import Fortmatic from "fortmatic";
+
 //ToDo: MY INFURA_ID, SWAP IN YOURS FROM https://infura.io/dashboard/ethereum
 export const INFURA_ID = "efb3104e5e92412ea461cd620843e5c8";
 
 // MY ETHERSCAN_ID, SWAP IN YOURS FROM https://etherscan.io/myapikey
 export const ETHERSCAN_KEY = "QU2FKIIE4RJKMZKV1VPVSVGQX5W7J14EUP";
+
+export const PROVIDER_OPTIONS = {
+  walletconnect: {
+    package: WalletConnectProvider, // required
+    options: {
+      bridge: "https://polygon.bridge.walletconnect.org",
+      infuraId: INFURA_ID,
+      rpc: {
+        1: `https://mainnet.infura.io/v3/${INFURA_ID}`, // mainnet // For more WalletConnect providers: https://docs.walletconnect.org/quick-start/dapps/web3-provider#required
+        42: `https://kovan.infura.io/v3/${INFURA_ID}`,
+        100: "https://dai.poa.network", // xDai
+      },
+    },
+  },
+  fortmatic: {
+    package: Fortmatic, // required
+    options: {
+      key: "pk_live_5A7C91B2FC585A17", // required
+    },
+  },
+  authereum: {
+    package: Authereum, // required
+  },
+};
 
 // BLOCKNATIVE ID FOR Notify.js:
 // export const BLOCKNATIVE_DAPPID = "0b58206a-f3c0-4701-a62f-73c7243e8c77";

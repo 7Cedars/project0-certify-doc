@@ -20,11 +20,7 @@ import { Container, Grid, Card } from "semantic-ui-react";
 import 'semantic-ui-css/semantic.min.css';
 import ABI from '../utils/CertifyDoc.json';
 import Web3Modal from "web3modal";
-import Portis from "@portis/web3";
-import WalletConnectProvider from "@walletconnect/web3-provider";
-import Authereum from "authereum";
-import Fortmatic from "fortmatic";
-import { INFURA_ID, NETWORK, NETWORKS } from "../constants";
+import { PROVIDER_OPTIONS } from "../constants";
 
 // importing components. 
 import NavBar  from "../components/navBar";
@@ -63,13 +59,12 @@ export default function Home() {
   const [userInput, setUserInput] = useState('');
   // array to save processed certificates returned from contract.
   const [certificatesArray, setCertificatesArray] = useState(null);
-  // See loading web3modal below. 
+  // Reference data for web3modal loading. 
   const web3ModalRef = useRef();
-  //
+  // the actual instance of the web3provider
   const [web3Provider, setWeb3Provider] = useState();
-  //
+  // saves what chain app is connected to. 
   const [web3ChainId, setWeb3ChainId] = useState(null);
-
 
   /* 
   The following are functions to connect to and interact with various types of blockchains 
@@ -84,10 +79,12 @@ export default function Home() {
     setWalletConnected(true);
 
     provider.on("chainChanged", _chainId => {
+      console.log("chain changed")
       setWeb3Provider(new ethers.providers.Web3Provider(provider));
     });
 
     provider.on("accountsChanged", _account => {
+      console.log("account changed")
       setWeb3Provider(new ethers.providers.Web3Provider(provider));
     });
   }, [web3Provider]);
@@ -325,7 +322,7 @@ export default function Home() {
   * @dev  What follows are the useEffect calls: changing state of website according to some change in another state. 
   */
 
-  // at startup calls checks if wallet is connected, sets a background image and sets dynamic height for component. 
+  // at startup calls checks if wallet is connected, sets a background image, sets dynamic height for component and loads data for possible Web3modal connection. 
   useEffect(() => {
     setMessage('warningTestApp');
     document.body.style.backgroundImage= `conic-gradient(from 90deg at 10% 15%, CornflowerBlue, fuchsia, salmon, CornflowerBlue)`;
@@ -335,30 +332,8 @@ export default function Home() {
       cacheProvider: false, 
       disableInjectedProvider: false,
       theme: "light", 
-      providerOptions: {
-        walletconnect: {
-          package: WalletConnectProvider, // required
-          options: {
-            bridge: "https://polygon.bridge.walletconnect.org",
-            infuraId: INFURA_ID,
-            rpc: {
-              1: `https://mainnet.infura.io/v3/${INFURA_ID}`, // mainnet // For more WalletConnect providers: https://docs.walletconnect.org/quick-start/dapps/web3-provider#required
-              42: `https://kovan.infura.io/v3/${INFURA_ID}`,
-              100: "https://dai.poa.network", // xDai
-            },
-          },
-        },
-        fortmatic: {
-          package: Fortmatic, // required
-          options: {
-            key: "pk_live_5A7C91B2FC585A17", // required
-          },
-        },
-        authereum: {
-          package: Authereum, // required
-        },
-      },
-  })}, []);
+      providerOptions: PROVIDER_OPTIONS 
+    })}, []);
 
   // @dev everytime tab is changed, resets certificate list and userinput. 
   useEffect(() => {
