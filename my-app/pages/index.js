@@ -21,6 +21,8 @@ import 'semantic-ui-css/semantic.min.css';
 import ABI from '../utils/CertifyDoc.json';
 import Web3Modal from "web3modal";
 import { PROVIDER_OPTIONS } from "../constants";
+import  { Breakpoint } from 'react-socks';
+
 
 // importing components. 
 import NavBar  from "../components/navBar";
@@ -359,6 +361,13 @@ export default function Home() {
 */
   return (
       <div > 
+        <Breakpoint large down>
+          <div>
+            This app is optimised for desktop use only.  
+          </div>
+        </Breakpoint>
+        
+        <Breakpoint large up>
         <UserContext.Provider value={{ 
           tab, setTab, heightComponent, 
           ensName, 
@@ -409,6 +418,7 @@ export default function Home() {
             <></>
         }
         </UserContext.Provider>
+        </Breakpoint>
         </div>
       )
 } 
