@@ -1,8 +1,14 @@
-This is the repository for certify.doc. It is a dapp that provides a single utility. It allows users to vouch for the authenticity of offline documents. 
+Certify.doc provides a single utility: It allows users to vouch for the authenticity of offline documents. 
 
-It records certificates of authenticity on the blockchain. These certifiactes  relate two ethereum addresses (an issuer and recipient address) to the hash of a digital offline document. 
+WARNING: this is a test app that has been deployed to the Goerli test network only. It is not meant for any real world use. It may (and probably will) break at any time.
+
+The app wad build with two aims 
+- as personal practice project: giving some basic experience with solidity, web3modal, reactjs and next.js. 
+- as a practical example of how to build dapps that are usable to users without web3 wallet. 
+
+## Basic Functionality
+Certify.doc records certificates of authenticity on the blockchain. These certifiactes  relate two ethereum addresses (an issuer and recipient address) to the hash of a digital offline document. 
 They are somewhat similar to non-fungible tokens (NFTs).
-
 But in contrast to NFTs 
 - These records cannot be traded or exchanged. They can only be revoked. 
 - These records can be accessed by uploading the original document. No ethereum wallet required.  
